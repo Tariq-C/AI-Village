@@ -15,6 +15,7 @@ GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 
+# Resource Tile Colours
 RRED = (255, 100, 0)
 RGREEN = (0, 255, 100)
 RBLUE = (100, 0, 255)
