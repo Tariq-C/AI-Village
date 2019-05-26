@@ -3,7 +3,7 @@
 
 # This is the starting code for a new game
 import pygame as pg
-import random as rdm
+import random as rdma
 
 
 # Constants for the game screen

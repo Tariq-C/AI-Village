@@ -2,6 +2,7 @@
 # Tutorial Followed to create pygame template
 
 # This is the starting code for a new game
+
 import pygame as pg
 import random as rdm
 import sys
@@ -9,6 +10,8 @@ from GameSettings import *
 from Agent import *
 from ResourceTile import *
 from GUI import *
+
+
 
 class Game:
     def __init__(self):
@@ -126,6 +129,11 @@ class Game:
         self.newAgent(0, 0)
         self.GUI.add(self.gui1)
         self.run()
+
+
+    def train(self):
+        pass
+
 
 
 g = Game()

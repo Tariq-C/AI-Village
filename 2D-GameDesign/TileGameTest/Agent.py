@@ -1,3 +1,4 @@
+
 import pygame as pg
 import numpy as np
 from GameSettings import *
@@ -5,6 +6,7 @@ from GameSettings import *
 class Agent(pg.sprite.Sprite):
     #sprite for agents
     def __init__(self, game, startX, startY, AgentI):
+        self.map = np.zeros((8,8))
         self.isTurn = True
         self.groups = game.agents
         pg.sprite.Sprite.__init__(self)
@@ -16,42 +18,38 @@ class Agent(pg.sprite.Sprite):
 
         # Agent Starting Coordinates
         self.x = startX
+        self.startX = startX
         self.y = startY
+        self.startY = startY
         # Agent Starting Parameters
 
         self.AgentI = AgentI
 
-        #TODO: Clean up to take values from resources in the system
 
 
-        self.maxHp = 100
-        self.Hp = self.maxHp
-        self.maxHunger = 100
-        self.Hunger = self.maxHunger
+        self.maxValue = 100
+        self.Hp, self.Hunger, self.Thirst = (self.maxValue,)*3
         self.HungerL = 1
-        self.maxThirst = 100
-        self.Thirst = self.maxThirst
         self.ThirstL = 2
 
 
-
-        self.maxBN = np.array((self.maxHunger, self.maxThirst))
         self.BNeeds = np.array((self.Hunger, self.Thirst))
         self.BNLoss = np.array((self.HungerL, self.ThirstL))
 
-
+    def respawn(self):
+        self.Hp, self.Hunger, self.Thirst = (self.maxValue,) * 3
+        self.BNeeds = (self.Hunger, self.Thirst)
+        self.x, self.y = self.startX, self.startY
 
     # Checks to see if a player is in a resource and if so will do the logic for it
     def in_resource(self):
         for resource in self.game.resources:
-            if resource.x == self.x and resource.y == self.y:
+            if resource.x == self.x and resource.y == self.y and \
+                    self.BNeeds[resource.index] + resource.Potency <= self.maxValue:
 
                 self.BNeeds[resource.index] += resource.Potency
                 resource.CurrentAmount -= resource.Potency
                 resource.turnUpdate()
-
-                if self.BNeeds[resource.index] > self.maxBN[resource.index]:
-                    self.BNeeds[resource.index] = self.maxBN[resource.index]
 
 
     # Movement Logic
@@ -59,9 +57,9 @@ class Agent(pg.sprite.Sprite):
             self.x += dx
             self.y += dy
 
-
             self.BNeeds = self.BNeeds - self.BNLoss
 
+            self.BNeeds = np.clip(self.BNeeds, 0, self.maxValue) #Sets min and max values currently replacing death
 
             # Grid Restrictions
             if self.x > 8 or self.x < 0:
@@ -75,7 +73,16 @@ class Agent(pg.sprite.Sprite):
     def updatestats(self):
         self.Hunger = self.BNeeds[0]
         self.Thirst = self.BNeeds[1]
-        print("Agent ", self.AgentI, self.Hunger, self.Thirst)
+
+        for i in self.BNeeds:
+            if self.Hp == 0:
+                self.respawn()
+            elif i < 30:
+                self.Hp += -1
+            elif i > 70 and self.Hp < 100:
+                self.Hp += 1
+
+        print("Agent ", self.AgentI, self.BNeeds, self.Hp)
 
     # Updates that will happen at every frame
     def update(self):
@@ -88,3 +95,4 @@ class Agent(pg.sprite.Sprite):
         self.move(dx, dy)
         self.in_resource()
         self.updatestats()
+
