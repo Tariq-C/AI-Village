@@ -19,10 +19,13 @@ BLACK = (0, 0, 0)
 RRED = (255, 100, 0)
 RGREEN = (0, 255, 100)
 RBLUE = (100, 0, 255)
+RMAGENTA = (255, 100, 255)
+RCYAN = (100, 255, 255)
+RYELLOW = (255, 255, 100)
 
 # Array of colours for easy access
 PlayerColours = (RED, BLUE, GREEN, MAGENTA, CYAN, YELLOW)
-ResourceColours = (RRED,RGREEN, RBLUE)
+ResourceColours = (RRED, RGREEN, RBLUE, RMAGENTA, RCYAN, RYELLOW)
 
 # Game Tiling settings
 TILESIZE = 54
@@ -31,4 +34,6 @@ GUIY = 54
 GRIDW = (WIDTH-GUIX)/TILESIZE
 GRIDH = (HEIGHT-GUIY)/TILESIZE
 
-#Transition Definition
+# Game Values
+NUMAGENTS = 3
+NUMRESOURCES = 3

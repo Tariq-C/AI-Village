@@ -8,40 +8,32 @@ class Model(nn.Module):
     def __init__(self, input_shp):
 
         super (Model, self).__init__()
+
         self.Nnet = torch.nn.ModuleList()
 
         self.k_size = 3
-        self.stride = 1
-        self.padding = 0
-        self.outc = 4
-        self.inc = 3 #The number of needs + distance
-        self.midc = 8 #m
-        self.numLayers = 3
+        self.outchannels = 4 #Up Down Left and Right
+        self.inchannels = input_shp[2] #The number of needs + distance
 
-
-        self.Nnet.append(nn.Linear(self.inc, self.midc))
-        self.Nnet.append(nn.ReLU)
-
-        for i in range(self.numLayers):
-            self.Nnet.append(nn.Linear(self.midc, self.midc))
-            self.Nnet.append(nn.ReLU())
-
-        self.Nnet.append(nn.Linear(self.midc, self.outc))
-
-        self.Nnet.weight = nn.Parameter(
-            torch.randn((self.outc, self.inc, self.k_size)),
-            requires_grad=False
-        )
-        self.Nnet.bias = nn.Parameter(
-            torch.randn((self.outc,)),
-            requires_grad=False
-        )
+        self.Nnet.append(nn.Conv2d(self.inchannels, 8, self.k_size))
+        self.Nnet.append(nn.ReLU())
+        self.Nnet.append(nn.Conv2d(8, 32, self.k_size))
+        self.Nnet.append(nn.ReLU())
+        self.Nnet.append(nn.Conv2d(32, 128, self.k_size))
+        self.Nnet.append(nn.ReLU())
+        self.Nnet.append(nn.Linear(1152, 256))
+        self.Nnet.append(nn.ReLU())
+        self.Nnet.append(nn.Linear(256, self.outchannels))
 
 
     def forward(self, x):
 
-        x = (x - self.mean) / self.std
 
-        x = self.Nnet(x)
+        x = x.reshape(1, x.shape[2], x.shape[0], x.shape[1])
+        # x should already be normalized
+        for i in range(9):
+            x = self.Nnet[i](x)
+            if i == 5:
+                x = torch.flatten(x)
 
         return x

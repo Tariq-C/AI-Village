@@ -2,6 +2,7 @@
 # Tutorial Followed to create pygame template
 
 # This is the starting code for a new game
+
 import pygame as pg
 import random as rdm
 

@@ -2,16 +2,17 @@ import pygame as pg
 from GameSettings import *
 import random as rdm
 
+
 class ResourceTile(pg.sprite.Sprite):
-    #sprite for agents
+    # sprite for agents
     def __init__(self, game, startX, startY, index):
         self.groups = game.resources
         pg.sprite.Sprite.__init__(self)
         self.game = game
-        self.image = pg.Surface((TILESIZE-1, TILESIZE-1)) # The Ones are for aesthetics
+        self.image = pg.Surface((TILESIZE - 1, TILESIZE - 1))  # The Ones are for aesthetics
         self.image.fill(ResourceColours[index])
         self.rect = self.image.get_rect()
-        self.rect.center = (WIDTH/2, HEIGHT/2)
+        self.rect.center = (WIDTH / 2, HEIGHT / 2)
 
         # Agent Starting Coordinates
         self.x = startX
