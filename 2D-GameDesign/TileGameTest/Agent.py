@@ -1,4 +1,5 @@
 import torch
+from torch import optim
 import torch.nn as nn
 import pygame as pg
 import numpy as np
@@ -10,6 +11,7 @@ from Model import *
 class Agent(pg.sprite.Sprite):
     # sprite for agents
     def __init__(self, game, startX, startY, AgentI):
+        torch.autograd.set_detect_anomaly(True)
 
         self.isTurn = True
 
@@ -33,10 +35,13 @@ class Agent(pg.sprite.Sprite):
         # Agent Internal Map
 
         self.map = torch.ones(9, 9,
-                              NUMRESOURCES + 1)
+                              NUMRESOURCES + 1, requires_grad=False)
         # The goal is to have the total number of resources, the number of agents, and one more for movement
         self.model = Model(self.map.shape)
-        self.model.eval()
+        self.model.train()
+
+        # Create Optimizer
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNINGRATE)
 
         # Agent Starting Parameters
 
@@ -44,9 +49,14 @@ class Agent(pg.sprite.Sprite):
 
         self.maxValue = rdm.randint(100, 300)  # Values wanted is 300
         self.Hp = self.maxValue
+        self.HpChange = 0
+        self.lastHp = self.Hp
 
         self.BNeeds = np.ones(NUMRESOURCES)
         self.BNLoss = np.ones(NUMRESOURCES)
+
+        self.TurnLoss = torch.zeros(1, requires_grad=True)
+        self.TurnCount = 0
 
         for i in range(NUMRESOURCES):
             self.BNeeds[i] = self.maxValue
@@ -68,10 +78,10 @@ class Agent(pg.sprite.Sprite):
             for i in range(9):
                 for j in range(9):
                     # This makes a radial map of every resource that takes the amount of resource left as a value
-                    self.map[j][i][1 + resource.index] = (18 - (abs(i - resource.x) + abs(j - resource.y))) / 18 \
+                    self.map[j][i][1 + resource.index] = (18 - (abs(i - resource.x) + abs(j - resource.y))) \
                                                          * (1 - (self.BNeeds[resource.index] / self.maxValue)) ** 2
 
-        # print(self.map[:,:,0])
+        #print(self.map[:,:,1])
 
     def respawn(self):
         self.Hp = self.maxValue
@@ -106,16 +116,22 @@ class Agent(pg.sprite.Sprite):
 
     # Updates the Needs of the player for printing (May Delete Later)
     def updatestats(self):
-
+        self.lastHp = self.Hp
         for i in self.BNeeds:
             if self.Hp <= 0:
                 self.respawn()
+                self.HpChange = -10000
             elif i == 0:
                 self.Hp += -2
+                self.HpChange = -2
             elif i < self.maxValue / 2:
                 self.Hp += -1
+                self.HpChange = -1
             elif i > self.maxValue / 4 * 3 and self.Hp < self.maxValue:
                 self.Hp += 1
+                self.HpChange = 100
+            else:
+                self.HpChange = 0
 
         print("Agent ", self.AgentI, self.BNeeds, self.Hp)
 
@@ -124,15 +140,29 @@ class Agent(pg.sprite.Sprite):
         self.rect.x = self.x * TILESIZE + TILESIZE / 4  # The last additions are for aesthetics
         self.rect.y = self.y * TILESIZE + TILESIZE + TILESIZE / 4  # The last additions are for aesthetics
 
+    # Training Segment to adjust the values of the neural network
+    def train(self):
+        self.optimizer.zero_grad()
+        self.TurnLoss = self.TurnLoss/self.game.trainInterval
+        self.TurnLoss.backward()
+        self.optimizer.step()
+        self.TurnCount = 0
+        self.TurnLoss = torch.zeros(1)
+
     # Updates that will happen every time a player moves
     def turnUpdate(self, dx=0, dy=0):
+        if self.TurnCount == self.game.trainInterval:
+            self.train()
         self.move(dx, dy)
+        self.TurnCount = self.TurnCount + 1
         self.in_resource()
         self.updatestats()
-        self.updateMap()
-        self.game.turncount += 1
-        print(self.game.turncount)
+        # This is causing an error to do with inplace operations, but this is the input of the system... why does this happen
+        #self.updateMap()
+
 
     def chooseDirection(self):
-        direction = self.model.forward(self.map)
-        return direction
+        output = self.model.forward(self.map)
+        direction = torch.max(output)
+        self.TurnLoss = self.TurnLoss + -1 * (direction * self.HpChange/(self.TurnCount+1))
+        return output

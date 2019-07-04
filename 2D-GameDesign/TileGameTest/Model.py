@@ -21,19 +21,22 @@ class Model(nn.Module):
         self.Nnet.append(nn.ReLU())
         self.Nnet.append(nn.Conv2d(32, 128, self.k_size))
         self.Nnet.append(nn.ReLU())
-        self.Nnet.append(nn.Linear(1152, 256))
-        self.Nnet.append(nn.ReLU())
-        self.Nnet.append(nn.Linear(256, self.outchannels))
+
+        self.FC = torch.nn.ModuleList()
+        self.FC.append(nn.Linear(1152, 256))
+        self.FC.append(nn.ReLU())
+        self.FC.append(nn.Linear(256, self.outchannels))
+
 
 
     def forward(self, x):
 
-
         x = x.reshape(1, x.shape[2], x.shape[0], x.shape[1])
         # x should already be normalized
-        for i in range(9):
+        for i in range(6):
             x = self.Nnet[i](x)
-            if i == 5:
-                x = torch.flatten(x)
+        x = torch.flatten(x)
+        for i in range(3):
+            x = self.FC[i](x)
 
         return x

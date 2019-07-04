@@ -18,7 +18,7 @@ class ResourceTile(pg.sprite.Sprite):
         self.x = startX
         self.y = startY
         # Agent Starting Parameters
-        self.CurrentAmount = rdm.randint(60, 90)
+        self.CurrentAmount = 100000000#rdm.randint(60, 90)
         self.Potency = rdm.randint(10, 15)
 
         self.index = index

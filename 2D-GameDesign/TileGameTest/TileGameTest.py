@@ -25,7 +25,9 @@ class Game:
         self.clock = pg.time.Clock()  # Game Clock
         self.resourceTileI = 0
         self.agentI = 0
-        self.turncount = 0
+        self.totalTurnCount = 0
+        self.turnCount = 0
+        self.trainInterval = STARTINGTRAININTERVAL
 
     def run(self):
         # Game Loop
@@ -35,19 +37,25 @@ class Game:
             self.clock.tick(FPS)
             for agent in self.agents:
                 agent.isTurn = True
-                while agent.isTurn == True:
+                while agent.isTurn:
                     # TODO: Write the Draw UI code
                     self.drawUI(agent)
-                    self.turnevents(agent)
+                    self.turnEvents(agent)
                     self.update()
                     self.draw()
+            self.totalTurnCount += 1
+            self.turnCount += 1
+            if self.turnCount == self.trainInterval * DOUBLINGTIME:
+                self.trainInterval = self.trainInterval * 2
+
+            print(self.totalTurnCount)
 
     def update(self):
         # Game Loop Update
         self.resources.update()
         self.agents.update()
 
-    def turnevents(self, agent):
+    def turnEvents(self, agent):
         for event in pg.event.get():
             # TODO: Make the quit work on every click not just intermediate ones
             if event.type == pg.QUIT:  # pg.QUIT == red x on top right of screen
@@ -64,18 +72,18 @@ class Game:
                 if event.key == pg.K_d:
                     agent.turnUpdate(dx=1)
 
-            else:
-                move = torch.argmin(agent.chooseDirection())
-                if move == 0:
-                    agent.turnUpdate(dy=-1)
-                if move == 1:
-                    agent.turnUpdate(dy=1)
-                if move == 2:
-                    agent.turnUpdate(dx=-1)
-                if move == 3:
-                    agent.turnUpdate(dx=1)
-
-
+        move = agent.chooseDirection()
+        movei = torch.argmax(move)
+        print(move)
+        #move = rdm.randint(0,3)
+        if movei == 0:
+            agent.turnUpdate(dy=-1)
+        if movei == 1:
+            agent.turnUpdate(dy=1)
+        if movei == 2:
+            agent.turnUpdate(dx=-1)
+        if movei == 3:
+            agent.turnUpdate(dx=1)
 
     # Events that take place at every frame
     def events(self):
@@ -84,7 +92,7 @@ class Game:
             for agent in self.agents:
                 agent.isTurn = True
                 while agent.isTurn == True:  # Logic to make it so only one player can make a move at a time
-                    self.turnevents(agent)
+                    self.turnEvents(agent)
                     self.update()
                     self.draw()
 
