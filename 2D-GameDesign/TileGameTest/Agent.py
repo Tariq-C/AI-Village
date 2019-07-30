@@ -55,7 +55,7 @@ class Agent(pg.sprite.Sprite):
         self.BNeeds = np.ones(NUMRESOURCES + 1)
         self.BNLoss = np.ones(NUMRESOURCES + 1)
 
-        self.TurnLoss = torch.zeros(game.trainInterval, requires_grad=True)
+        self.TurnLoss = torch.zeros(1, requires_grad=True)
         self.TurnCount = 0
 
         for i in range(NUMRESOURCES + 1):
@@ -76,20 +76,26 @@ class Agent(pg.sprite.Sprite):
             for j in range(9):
                 # First Map is movement
                 self.map[self.TurnCount-1][j][i][0] = 0.1#(18 - (abs((i - self.x)) + abs((j - self.y))))/18
-        self.map[self.TurnCount-1][self.y][self.x][0] = 1
         # The next maps are all the resource maps create a radial
 
         for agent in self.game.agents:
-            self.map[self.TurnCount-1][agent.y][agent.x][1] += agent.social
+            for i in range(3):
+                for j in range(3):
+                    x = agent.x + i - 1
+                    y = agent.y + j - 1
+                    if 0 <= x <= 8 and 0 <= y <= 8:
+                        self.map[self.TurnCount-1][y][x][1] += agent.social
 
         for resource in self.game.resources:
-            #self.map[self.TurnCount-1][resource.y][resource.x][resource.index+2] = resource.Potency
-            for i in range(9):
-                for j in range(9):
+            self.map[self.TurnCount-1][resource.y][resource.x][resource.index+2] = abs(self.BNeeds[resource.index] - self.maxValue)
+            #for i in range(9):
+             #   for j in range(9):
                     # This makes a radial map of every resource that takes the amount of resource left as a value
-                    self.map[self.TurnCount-1][j][i][1 + resource.index] = (18 - (abs(i - resource.x) + abs(j - resource.y))) \
-                                                         * (1 - (self.BNeeds[resource.index] / self.maxValue)) ** 2
+              #      self.map[self.TurnCount-1][j][i][1 + resource.index] = (18 - (abs(i - resource.x) + abs(j - resource.y))) \
+                                                         #* (1 - (self.BNeeds[resource.index] / self.maxValue)) ** 2
 
+        # To determine location of Agent in all maps
+        self.map[self.TurnCount - 1][self.y][self.x][:] = 0
         #print(self.map[:,:,:,0])
 
     def respawn(self):
@@ -167,9 +173,9 @@ class Agent(pg.sprite.Sprite):
 
     # Updates that will happen every time a player moves
     def turnUpdate(self, dx=0, dy=0):
+        self.move(dx, dy)
         if self.TurnCount == self.game.trainInterval:
             self.train()
-        self.move(dx, dy)
         self.TurnCount = self.TurnCount + 1
         self.in_resource()
         self.updatestats()
@@ -183,6 +189,6 @@ class Agent(pg.sprite.Sprite):
         direction = torch.max(output)
         print(direction)
 
-        self.TurnLoss[self.TurnCount] = self.TurnLoss + 2**direction/self.game.trainInterval
+        self.TurnLoss = self.TurnLoss + 2**direction/self.game.trainInterval
 
         return output

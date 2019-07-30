@@ -36,6 +36,7 @@ class Model(nn.Module):
         for i in range(6):
             x = self.Nnet[i](x)
         x = torch.flatten(x)
+
         for i in range(3):
             x = self.FC[i](x)
 
