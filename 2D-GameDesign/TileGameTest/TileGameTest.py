@@ -132,7 +132,7 @@ class Game:
     # Input: Takes the x and y position on the grid
     # Output: Adds a new Resource Tile to the group resources
     def newReourceTile(self):
-        self.resources.add(ResourceTile(self, rdm.randint(0, 8), rdm.randint(0, 8), self.resourceTileI))
+        self.resources.add(ResourceTile(self, rdm.randint(1, 7), rdm.randint(1, 7), self.resourceTileI))
         self.resourceTileI += 1
 
     # This is the method when starting a new game

@@ -25,8 +25,8 @@ class ResourceTile(pg.sprite.Sprite):
 
     # When out of resource, will appear elsewhere
     def regrow(self):
-        self.x = rdm.randint(0, 8)
-        self.y = rdm.randint(0, 8)
+        self.x = rdm.randint(1, 7)
+        self.y = rdm.randint(1, 7)
         self.CurrentAmount = rdm.randint(60, 90)
         self.Potency = rdm.randint(10, 15)
 

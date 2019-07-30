@@ -49,7 +49,9 @@ class Agent(pg.sprite.Sprite):
 
         self.maxValue = rdm.randint(100, 300)  # Values wanted is 300
         self.Hp = self.maxValue
-        self.reward = 0
+        self.TotalReward = 0
+        self.TurnReward = 0
+        self.LastTurnReward = 0
         self.social = rdm.randint(5,25)
 
         self.BNeeds = np.ones(NUMRESOURCES + 1)
@@ -102,7 +104,7 @@ class Agent(pg.sprite.Sprite):
         self.Hp = self.maxValue
         for i in range(NUMRESOURCES+1):
             self.BNeeds[i] = self.maxValue
-        self.reward = self.reward - 100
+        self.TurnReward = self.TurnReward - 100
         self.x, self.y = self.startX, self.startY
 
     # Checks to see if a player is in a resource and if so will do the logic for it
@@ -113,13 +115,13 @@ class Agent(pg.sprite.Sprite):
                 self.BNeeds[resource.index] += resource.Potency
                 resource.CurrentAmount -= resource.Potency
                 resource.turnUpdate()
-                self.reward = self.reward + 30
+                self.TurnReward = self.TurnReward + 30
 
         for agent in self.game.agents:
             if agent.AgentI != self.AgentI:
                 if abs(agent.x - self.x) < 2 and abs(agent.y - self.y) < 2:
                     self.BNeeds[-1] += agent.social
-                    self.reward = self.reward + 3
+                    self.TurnReward = self.TurnReward + 3
 
     # Movement Logic
     def move(self, dx=0, dy=0):
@@ -146,12 +148,12 @@ class Agent(pg.sprite.Sprite):
                 self.respawn()
             elif i < self.maxValue / 2:
                 self.Hp += -1
-                self.reward = self.reward + 0
+                self.TurnReward = self.TurnReward + 0
             elif i > self.maxValue / 4 * 3 and self.Hp < self.maxValue:
                 self.Hp += 1
-                self.reward = self.reward + 0.1
+                self.TurnReward = self.TurnReward + 0.1
             else:
-                self.reward = self.reward + 0.2
+                self.TurnReward = self.TurnReward + 0.2
 
         print("Agent ", self.AgentI, self.BNeeds, self.Hp)
 
@@ -163,13 +165,14 @@ class Agent(pg.sprite.Sprite):
     # Training Segment to adjust the values of the neural network
     def train(self):
         self.optimizer.zero_grad()
-        self.TurnLoss = self.TurnLoss + self.reward/self.game.trainInterval
-        print(self.TurnLoss, self.reward)
+        self.TurnLoss = self.TurnLoss + self.TotalReward/self.game.trainInterval
+        print(self.TurnLoss, self.TurnReward, self.TotalReward)
         self.TurnLoss.backward()
         self.optimizer.step()
         self.TurnCount = 0
         self.TurnLoss = torch.zeros(1)
-        self.reward = 0
+        self.TotalReward = 0
+
 
     # Updates that will happen every time a player moves
     def turnUpdate(self, dx=0, dy=0):
@@ -181,6 +184,9 @@ class Agent(pg.sprite.Sprite):
         self.updatestats()
         # This is causing an error to do with inplace operations, but this is the input of the system... why does this happen
         self.updateMap()
+        self.TotalReward += self.TurnReward
+        self.LastTurnReward = self.TurnReward
+        self.TurnReward = 0
 
 
     def chooseDirection(self):
@@ -189,6 +195,6 @@ class Agent(pg.sprite.Sprite):
         direction = torch.max(output)
         print(direction)
 
-        self.TurnLoss = self.TurnLoss + 2**direction/self.game.trainInterval
+        self.TurnLoss = self.TurnLoss + (self.TurnReward + direction) / (self.maxValue - self.Hp + 1)
 
         return output
