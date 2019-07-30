@@ -44,11 +44,11 @@ class Game:
                     self.update()
                     self.draw()
             self.totalTurnCount += 1
+            print(self.totalTurnCount)
             self.turnCount += 1
             if self.turnCount == self.trainInterval * DOUBLINGTIME:
                 self.trainInterval = self.trainInterval * 2
-
-            print(self.totalTurnCount)
+                self.turnCount = 0
 
     def update(self):
         # Game Loop Update
@@ -74,7 +74,6 @@ class Game:
 
         move = agent.chooseDirection()
         movei = torch.argmax(move)
-        print(move)
         #move = rdm.randint(0,3)
         if movei == 0:
             agent.turnUpdate(dy=-1)

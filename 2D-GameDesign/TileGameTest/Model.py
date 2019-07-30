@@ -15,7 +15,7 @@ class Model(nn.Module):
         self.outchannels = 4 #Up Down Left and Right
         self.inchannels = input_shp[2] #The number of needs + distance
 
-        self.Nnet.append(nn.Conv2d(self.inchannels, 8, self.k_size))
+        self.Nnet.append(nn.Conv2d(self.inchannels, 8, self.k_size, padding=1))
         self.Nnet.append(nn.ReLU())
         self.Nnet.append(nn.Conv2d(8, 32, self.k_size))
         self.Nnet.append(nn.ReLU())
@@ -23,9 +23,9 @@ class Model(nn.Module):
         self.Nnet.append(nn.ReLU())
 
         self.FC = torch.nn.ModuleList()
-        self.FC.append(nn.Linear(1152, 256))
+        self.FC.append(nn.Linear(3200, 512))
         self.FC.append(nn.ReLU())
-        self.FC.append(nn.Linear(256, self.outchannels))
+        self.FC.append(nn.Linear(512, self.outchannels))
 
 
 
