@@ -52,7 +52,7 @@ class Agent(pg.sprite.Sprite):
         self.TotalReward = 0
         self.TurnReward = 0
         self.LastTurnReward = 0
-        self.social = rdm.randint(5,25)
+        self.social = rdm.randint(10,25)
 
         self.BNeeds = np.ones(NUMRESOURCES + 1)
         self.BNLoss = np.ones(NUMRESOURCES + 1)
@@ -63,6 +63,8 @@ class Agent(pg.sprite.Sprite):
         for i in range(NUMRESOURCES + 1):
             self.BNeeds[i] = self.maxValue
             self.BNLoss[i] = rdm.randint(1, 3)
+
+        print(self.maxValue, self.social, PlayerColours[AgentI])
 
     def updateMap(self):
 
@@ -110,12 +112,13 @@ class Agent(pg.sprite.Sprite):
     # Checks to see if a player is in a resource and if so will do the logic for it
     def in_resource(self):
         for resource in self.game.resources:
-            if resource.x == self.x and resource.y == self.y and \
-                    self.BNeeds[resource.index] + resource.Potency <= self.maxValue:
+            if resource.x == self.x and resource.y == self.y:
                 self.BNeeds[resource.index] += resource.Potency
                 resource.CurrentAmount -= resource.Potency
-                resource.turnUpdate()
                 self.TurnReward = self.TurnReward + 30
+                if self.BNeeds[resource.index] + resource.Potency <= self.maxValue:
+                     self.BNeeds[resource.index] = self.BNeeds[resource.index] + resource.Potency
+                resource.turnUpdate()
 
         for agent in self.game.agents:
             if agent.AgentI != self.AgentI:
@@ -155,7 +158,7 @@ class Agent(pg.sprite.Sprite):
             else:
                 self.TurnReward = self.TurnReward + 0.2
 
-        print("Agent ", self.AgentI, self.BNeeds, self.Hp)
+        #print("Agent ", self.AgentI, self.BNeeds, self.Hp)
 
     # Updates that will happen at every frame
     def update(self):
@@ -166,26 +169,24 @@ class Agent(pg.sprite.Sprite):
     def train(self):
         self.optimizer.zero_grad()
         self.TurnLoss = self.TurnLoss + self.TotalReward/self.game.trainInterval
-        print(self.TurnLoss, self.TurnReward, self.TotalReward)
+        #print(self.TurnLoss, self.TurnReward)
         self.TurnLoss.backward()
         self.optimizer.step()
         self.TurnCount = 0
         self.TurnLoss = torch.zeros(1)
-        self.TotalReward = 0
 
 
     # Updates that will happen every time a player moves
     def turnUpdate(self, dx=0, dy=0):
+        self.updateMap()
         self.move(dx, dy)
-        if self.TurnCount == self.game.trainInterval:
-            self.train()
-        self.TurnCount = self.TurnCount + 1
         self.in_resource()
         self.updatestats()
+        if self.TurnCount == self.game.trainInterval:
+            self.train()
         # This is causing an error to do with inplace operations, but this is the input of the system... why does this happen
-        self.updateMap()
-        self.TotalReward += self.TurnReward
-        self.LastTurnReward = self.TurnReward
+
+        self.TurnCount = self.TurnCount + 1
         self.TurnReward = 0
 
 
@@ -193,8 +194,11 @@ class Agent(pg.sprite.Sprite):
         output = self.model.forward(self.map[self.TurnCount-1])
 
         direction = torch.max(output)
-        print(direction)
+        #print(direction)
 
-        self.TurnLoss = self.TurnLoss + (self.TurnReward + direction) / (self.maxValue - self.Hp + 1)
+        self.TurnLoss = self.TurnLoss + (direction + self.TurnReward**self.game.trainInterval)/ (self.maxValue - self.Hp + 1)
 
         return output
+
+    def calculateReward(self):
+        pass
