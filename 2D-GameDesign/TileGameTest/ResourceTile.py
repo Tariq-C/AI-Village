@@ -19,14 +19,14 @@ class ResourceTile(pg.sprite.Sprite):
         self.y = startY
         # Agent Starting Parameters
         self.CurrentAmount = 100000 #rdm.randint(600, 900)
-        self.Potency = rdm.randint(100, 150)
+        self.Potency = rdm.randint(15, 25)
 
         self.index = index
 
     # When out of resource, will appear elsewhere
     def regrow(self):
         self.CurrentAmount = 100000#rdm.randint(60, 90)
-        self.Potency = rdm.randint(50, 100)
+        self.Potency = rdm.randint(15, 25)
 
     # Updates every frame
     def update(self):
